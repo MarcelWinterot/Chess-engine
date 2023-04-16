@@ -20,8 +20,7 @@ def hangingPieces(ply, board,currentValue, values=pieceValues):
 
     return hangingPieces(ply-1, hypotheticalBoard, currentValue)
 
-
-def evaluate(board, values):
+def evaluate(board, values=pieceValues):
     value = 0
 
     # Counting pieces
@@ -34,3 +33,35 @@ def evaluate(board, values):
     value += hangingPieces(2, board, 0)
 
     return value
+
+def minMax(board, depth, bestMove, bestScore, maximingPlayer):
+    if depth == 0 or board.is_game_over():
+        return bestMove
+    
+    if maximingPlayer:
+        for move in board.legal_moves:
+            hypotheticalBoard = board.copy()
+            hypotheticalBoard.push(move)
+            score = minMax(board, depth-1, move, evaluate(hypotheticalBoard), False)
+            if score > bestScore:
+                bestMove, bestScore = move, score
+
+        return minMax(board, depth-1, bestMove, bestScore, True)
+
+    else:
+        opponentBestScore = -100_000
+        for opponentMove in board.legal_moves:
+            hypotheticalBoard = board.copy()
+            hypotheticalBoard.push(opponentMove)
+            opponentScore = evaluate(hypotheticalBoard)
+            if opponentScore > opponentBestScore:
+                opponentBestScore = opponentScore
+            
+        print(f"Opponents best score is {opponentBestScore} after white's move {bestMove}")
+        return opponentBestScore
+
+"""
+TODO:
+1. Fix evaluation as hangingPieces isn't working correctly
+2. Finish minMax
+"""
