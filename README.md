@@ -1,2 +1,5 @@
 # Chess engine created by Marcel Winterot
-## Project started on 8th of April 2023 at 03:06
+
+### Project made in python using python-chess library. I will convert it to c++ ASAP.
+
+Project is strictly for educational use, so you are free to copy the code.
