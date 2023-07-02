@@ -1,0 +1,3 @@
+C:/Users/Marcel/Documents/GitHub/Chess-engine/sourceCode/cmake-build-debug/CMakeFiles/chess_engine.dir
+C:/Users/Marcel/Documents/GitHub/Chess-engine/sourceCode/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/Marcel/Documents/GitHub/Chess-engine/sourceCode/cmake-build-debug/CMakeFiles/rebuild_cache.dir

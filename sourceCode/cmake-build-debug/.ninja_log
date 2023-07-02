@@ -1,0 +1,5 @@
+# ninja log v5
+2	651	7100022941852228	CMakeFiles/chess_engine.dir/main.cpp.obj	2aa6e7b674215956
+3	285	7100064669225973	build.ninja	c09707d117c79dc4
+652	822	7100022943514948	chess_engine.exe	cd2bce1b755a049e
+23	3224	7099513270137971	CMakeFiles/chess_engine.dir/thc.cpp.obj	eab7ed067642fd40
