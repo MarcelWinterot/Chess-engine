@@ -1,31 +1,7 @@
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "cppcoreguidelines-narrowing-conversions"
 #include <iostream>
 #include <string>
 #include <vector>
 #include "thc.h"
-#include <unordered_map>
-
-struct HashEntry {
-    std::string fen;
-    short int evaluation{};
-    char depth{};
-};
-
-int findEvaluation(const std::unordered_map<int, HashEntry>& hashMap, const std::string& fen, int minDepth){
-    for (const auto& entry : hashMap) {
-        if (entry.second.fen == fen && entry.second.depth >= minDepth) {
-            return entry.second.evaluation;
-        }
-    }
-    return 404;
-}
-
-void insertEntry(std::unordered_map<int, HashEntry>& hashMap, const std::string& fen, short evaluation, char depth) {
-    int newKey = static_cast<int>(hashMap.size()) + 1;
-    HashEntry newEntry = {fen,evaluation, depth};
-    hashMap[newKey] = newEntry;
-}
 
 void DisplayPosition( thc::ChessRules &cr)
 {
@@ -54,32 +30,64 @@ std::vector<thc::Move> GetLegalMoves( thc::ChessRules &cr )
     return moves;
 }
 
-int alphaBeta(thc::ChessRules &cr, char depth, short int alpha, short int beta, bool maximizingPlayer){
+void DisplayLegalMoves( thc::ChessRules &cr )
+{
+    std::vector<thc::Move> moves = GetLegalMoves(cr);
+    for(auto & move : moves)
+    {
+        std::string mv_txt = move.NaturalOut(&cr);
+        std::cout << mv_txt.c_str() << std::endl;
+    }
+}
+
+int evaluateMaterial(const thc::ChessRules& board) {
+    int score = 0;
+    for (int i = 0; i < 64; i++) { // iterate over all squares on the board
+        auto square = static_cast<thc::Square>(i);
+        char piece = board.squares[square]; // get the piece on the square
+        switch (piece) {
+            case 'P': score += 1; break; // white pawn
+            case 'N': score += 3; break; // white knight
+            case 'B': score += 3; break; // white bishop
+            case 'R': score += 5; break; // white rook
+            case 'Q': score += 9; break; // white queen
+            case 'p': score -= 1; break; // black pawn
+            case 'n': score -= 3; break; // black knight
+            case 'b': score -= 3; break; // black bishop
+            case 'r': score -= 5; break; // black rook
+            case 'q': score -= 9; break; // black queen
+            default: break;
+        }
+    }
+    return score;
+}
+
+int alphaBeta(thc::ChessRules &cr, int depth, int alpha, int beta, bool maximizingPlayer){
     if (depth == 0){
-        return cr.Evaluate();
+        return evaluateMaterial(cr);
     }
 
     if (maximizingPlayer) {
-        short int maxEval = -1000;
+        int maxEval = -1000;
         for (auto &move : GetLegalMoves(cr)) {
             thc::ChessRules cr_copy = cr;
             cr_copy.PlayMove(move);
-            short int eval = alphaBeta(cr_copy, depth - 1, alpha, beta, false);
-            maxEval = std::max(static_cast<short int>(maxEval), static_cast<short int>(eval));
-            alpha = std::max(static_cast<short int>(alpha), static_cast<short int>(eval));
+            int eval = alphaBeta(cr_copy, depth - 1, alpha, beta, false);
+            maxEval = std::max(maxEval, eval);
+            alpha = std::max(alpha, eval);
             if (beta <= alpha){
                 break;
             }
         }
         return maxEval;
     } else {
-        short int minEval = 1000;
+        int minEval = 1000;
         for (auto &move : GetLegalMoves(cr)) {
             thc::ChessRules cr_copy = cr;
             cr_copy.PlayMove(move);
-            short int eval = alphaBeta(cr_copy, depth - 1, alpha, beta, true);
-            minEval = std::min(static_cast<short int>(minEval), static_cast<short int>(eval));
-            beta = std::min(static_cast<short int>(beta), static_cast<short int>(eval));
+            int eval = alphaBeta(cr_copy, depth - 1, alpha, beta, true);
+            minEval = std::min(minEval, eval);
+            beta = std::min(beta, eval);
             if (beta <= alpha){
                 break;
             }
@@ -88,20 +96,14 @@ int alphaBeta(thc::ChessRules &cr, char depth, short int alpha, short int beta, 
     }
 }
 
-thc::Move findBestMove(thc::ChessRules &cr, char depth, bool isWhite, std::unordered_map<int, HashEntry>& hashMap){
+thc::Move findBestMove(thc::ChessRules &cr, int depth, bool isWhite){
     if (isWhite){
-        short int maxEval = -1000;
+        int maxEval = -1000;
         thc::Move bestMove = thc::Move();
         for (auto &move : GetLegalMoves(cr)) {
             thc::ChessRules cr_copy = cr;
             cr_copy.PlayMove(move);
-            std::string fen = cr_copy.ForsythPublish();
-            short int eval = findEvaluation(hashMap, fen, depth);
-
-            if (eval == 404){
-                eval = alphaBeta(cr_copy, depth - 1, -1000, 1000, false);
-                insertEntry(hashMap, fen, eval, depth - 1);
-            }
+            int eval = alphaBeta(cr_copy, depth - 1, -1000, 1000, false);
 
             if (eval == 1000) {
                 std::string mv_txt = move.NaturalOut(&cr);
@@ -119,19 +121,12 @@ thc::Move findBestMove(thc::ChessRules &cr, char depth, bool isWhite, std::unord
         return bestMove;
     }
     else {
-        short int maxEval = 1000;
+        int maxEval = 1000;
         thc::Move bestMove = thc::Move();
         for (auto &move : GetLegalMoves(cr)) {
             thc::ChessRules cr_copy = cr;
             cr_copy.PlayMove(move);
-
-            std::string fen = cr_copy.ForsythPublish();
-            short int eval = findEvaluation(hashMap, fen, depth);
-
-            if (eval == 404){
-                eval = alphaBeta(cr_copy, depth - 1, -1000, 1000, true);
-                insertEntry(hashMap, fen, eval, depth - 1);
-            }
+            int eval = alphaBeta(cr_copy, depth - 1, -1000, 1000, true);
 
             if (eval == -1000) {
                 std::string mv_txt = move.NaturalOut(&cr);
@@ -152,17 +147,16 @@ thc::Move findBestMove(thc::ChessRules &cr, char depth, bool isWhite, std::unord
 int main()
 {
     thc::ChessRules cr;
-    cr.Forsyth("1q2br1k/1p6/1P1N1n1p/p1P1pB2/P2b2p1/B5K1/3Q4/5R2 w - - 0 1");
+    cr.Forsyth("r4rk1/1p3p1p/2p1bp2/6q1/pQ6/P4PP1/1P2B2P/K5RR b - - 0 1");
+//    r4rk1/1p3p1p/2p2bp2/6q1/pQ6/P4PP1/1P2B2P/K5RR b - - 0 1
+//    r4rk1/1p3p1p/2p1bp2/6q1/pQ6/P4PP1/1P2B2P/K5RR b - - 0 1
     DisplayPosition(cr);
-    std::unordered_map<int, HashEntry> hashMap;
-    hashMap.clear();
-    findBestMove(cr, 10, true, hashMap);
-    return 0;
+    findBestMove(cr, 6, false);
 }
 
 // TODO:
-// 1. Add transposition tables with zobrist hashing - working but without the hashing
+// 1. Add transpostion tables with zobrist hashing
 // 2. Add iterative deepening
 // 3. Add quiescence search
 // 4. Add opening book
-// 5. Add endgame table bases
+// 5. Add endgame tablebases

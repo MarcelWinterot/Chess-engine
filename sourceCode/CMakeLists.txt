@@ -3,4 +3,8 @@ project(chess_engine)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Add the main executable target
 add_executable(chess_engine main.cpp ./thc.cpp)
+
+## Add the tests executable target
+#add_executable(tests tests.cpp)
