@@ -12,11 +12,12 @@ struct hashEntry{
     short eval;
 };
 
-const unsigned long long amountOfRows = 4300000000;
+const unsigned long long amountOfRows = 1150000000;
 std::vector<hashEntry> transpositionTable(amountOfRows);
 
 void storeHashEntry(thc::ChessRules& cr, char depth, short eval){
     uint64_t hash = cr.HashCalculate();
+    hash = hash/4;
     hashEntry entry = {depth, eval};
     transpositionTable[hash] = entry;
 }
@@ -86,6 +87,7 @@ short alphaBeta(thc::ChessRules &cr, char depth, short alpha, short beta, bool m
             thc::ChessRules cr_copy = cr;
             cr_copy.PlayMove(move);
             long long hash = cr_copy.HashCalculate();
+            hash = hash/4;
             short eval = getEvalFromHash(hash, depth - 1);
 
             if (eval==404){
@@ -106,6 +108,7 @@ short alphaBeta(thc::ChessRules &cr, char depth, short alpha, short beta, bool m
             thc::ChessRules cr_copy = cr;
             cr_copy.PlayMove(move);
             long long hash = cr_copy.HashCalculate();
+            hash = hash/4;
 
             short eval = getEvalFromHash(hash, depth - 1);
 
@@ -134,6 +137,7 @@ thc::Move findBestMove(thc::ChessRules &cr, char depth, bool isWhite){
         thc::ChessRules cr_copy = cr;
         cr_copy.PlayMove(move);
         long long hash = cr_copy.HashCalculate();
+        hash = hash/4;
 
         short eval = getEvalFromHash(hash, depth - 1);
         if (eval==404){
@@ -164,8 +168,8 @@ int main()
 }
 
 // TODO:
-// 1. Add transposition tables with zobrist hashing - working but without the hashing
-// 2. Add iterative deepening
+// 1. Add transposition tables with zobrist hashing - working
+// 2. Add iterative deepening - started working
 // 3. Add quiescence search
 // 4. Add opening book
 // 5. Add endgame table bases
