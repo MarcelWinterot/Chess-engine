@@ -1745,17 +1745,18 @@ uint32_t ChessPosition::HashCalculate()
 {
     int32_t hash = 0;
     char *p = squares;
-    for( int i=0; i<64; i++ )
+    for(auto & i : hash_lookup)
     {
         char c = *p++;
         if( c < 'B' )
             c = 'a';
         else if( c > 'r' )
             c = 'a';
-        hash ^= hash_lookup[i][c-'B'];
+        hash ^= i[c-'B'];
     }
-    return hash;
+    return hash / 2;
 }
+
 
 
 /****************************************************************************

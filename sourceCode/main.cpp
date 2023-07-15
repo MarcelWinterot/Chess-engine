@@ -12,22 +12,17 @@ struct hashEntry{
     short eval;
 };
 
-const unsigned long long amountOfRows = 5000000000;
+const unsigned long long amountOfRows = 1150000000;
 std::vector<hashEntry> transpositionTable(amountOfRows);
 
-/*
-Stores the given hash into the transposition table
- */
 void storeHashEntry(thc::ChessRules& cr, char depth, short eval){
     uint64_t hash = cr.HashCalculate();
+    hash = hash/4;
     hashEntry entry = {depth, eval};
     transpositionTable[hash] = entry;
 }
 
-/*
-Returns the evaluation of the given hash
- */
-short getEvalFromHash(uint64_t hash, char minDepth){
+short getEvalFromHash(long long& hash, char minDepth){
     hashEntry result = transpositionTable[hash];
     if (result.depth >= minDepth && result.depth > 4){
         return result.eval;
@@ -35,9 +30,6 @@ short getEvalFromHash(uint64_t hash, char minDepth){
     return 404;
 }
 
-/*
-Counts material on the board and returns the score
- */
 short evaluateMaterial(const thc::ChessRules& board) {
     short score = 0;
     static const std::unordered_map<char, short> pieceValues = {
@@ -57,18 +49,12 @@ short evaluateMaterial(const thc::ChessRules& board) {
     return score;
 }
 
-/*
-Displays the current position in the console
- */
 void DisplayPosition( thc::ChessRules &cr)
 {
     std::string s = cr.ToDebugStr();
     std::cout << s.c_str() << std::endl;
 }
 
-/*
-Returns a vector of legal moves sorted by checks, captures and normal moves
- */
 std::vector<thc::Move> GetLegalMoves( thc::ChessRules &cr )
 {
     std::vector<thc::Move> moves, checks, captures, normal;
@@ -90,10 +76,7 @@ std::vector<thc::Move> GetLegalMoves( thc::ChessRules &cr )
     return moves;
 }
 
-/*
-Returns the evaluation of the given position
- */
-short alphaBeta(thc::ChessRules &cr, short depth, short alpha, short beta, bool maximizingPlayer){
+short alphaBeta(thc::ChessRules &cr, char depth, short alpha, short beta, bool maximizingPlayer){
     if (depth == 0){
         return evaluateMaterial(cr);
     }
@@ -104,6 +87,7 @@ short alphaBeta(thc::ChessRules &cr, short depth, short alpha, short beta, bool 
             thc::ChessRules cr_copy = cr;
             cr_copy.PlayMove(move);
             long long hash = cr_copy.HashCalculate();
+            hash = hash/4;
             short eval = getEvalFromHash(hash, depth - 1);
 
             if (eval==404){
@@ -124,6 +108,7 @@ short alphaBeta(thc::ChessRules &cr, short depth, short alpha, short beta, bool 
             thc::ChessRules cr_copy = cr;
             cr_copy.PlayMove(move);
             long long hash = cr_copy.HashCalculate();
+            hash = hash/4;
 
             short eval = getEvalFromHash(hash, depth - 1);
 
@@ -142,10 +127,7 @@ short alphaBeta(thc::ChessRules &cr, short depth, short alpha, short beta, bool 
     }
 }
 
-/*
-Returns the best move for the given position
- */
-thc::Move findBestMove(thc::ChessRules &cr, short depth, bool isWhite){
+thc::Move findBestMove(thc::ChessRules &cr, char depth, bool isWhite){
     thc::Move bestMove = thc::Move();
 
     short bestValue = isWhite ? -1000 : 1000;
@@ -154,7 +136,8 @@ thc::Move findBestMove(thc::ChessRules &cr, short depth, bool isWhite){
     for (auto &move : GetLegalMoves(cr)) {
         thc::ChessRules cr_copy = cr;
         cr_copy.PlayMove(move);
-        uint64_t hash = cr_copy.HashCalculate();
+        long long hash = cr_copy.HashCalculate();
+        hash = hash/4;
 
         short eval = getEvalFromHash(hash, depth - 1);
         if (eval==404){
@@ -185,8 +168,8 @@ int main()
 }
 
 // TODO:
-// 1. Add transposition tables with zobrist hashing - working but without the hashing
-// 2. Add iterative deepening
+// 1. Add transposition tables with zobrist hashing - working
+// 2. Add iterative deepening - started working
 // 3. Add quiescence search
 // 4. Add opening book
 // 5. Add endgame table bases

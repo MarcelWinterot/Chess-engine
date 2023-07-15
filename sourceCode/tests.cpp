@@ -2,6 +2,51 @@
 #include <string>
 #include <vector>
 #include "thc.h"
+#include <unordered_map>
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+
+struct hashEntry{
+    char depth;
+    short eval;
+};
+
+const unsigned long long amountOfRows = 4300000000;
+std::vector<hashEntry> transpositionTable(amountOfRows);
+
+void storeHashEntry(thc::ChessRules& cr, char depth, short eval){
+    uint64_t hash = cr.HashCalculate();
+    hashEntry entry = {depth, eval};
+    transpositionTable[hash] = entry;
+}
+
+short getEvalFromHash(long long& hash, char minDepth){
+    hashEntry result = transpositionTable[hash];
+    if (result.depth >= minDepth && result.depth > 4){
+        return result.eval;
+    }
+    return 404;
+}
+
+short evaluateMaterial(const thc::ChessRules& board) {
+    short score = 0;
+    static const std::unordered_map<char, short> pieceValues = {
+            {'P', 1}, {'N', 3}, {'B', 3}, {'R', 5}, {'Q', 9},
+            {'p', -1}, {'n', -3}, {'b', -3}, {'r', -5}, {'q', -9}
+    };
+
+    for (short i = 0; i < 64; i++) {
+        auto square = static_cast<thc::Square>(i);
+        char piece = board.squares[square];
+        auto it = pieceValues.find(piece);
+        if (it != pieceValues.end()) {
+            score += it->second;
+        }
+    }
+
+    return score;
+}
 
 void DisplayPosition( thc::ChessRules &cr)
 {
@@ -11,7 +56,7 @@ void DisplayPosition( thc::ChessRules &cr)
 
 std::vector<thc::Move> GetLegalMoves( thc::ChessRules &cr )
 {
-    std::vector<thc::Move> moves, checks, captures, attacks;
+    std::vector<thc::Move> moves, checks, captures, normal;
     std::vector<bool> check, mate, stalemate;
     cr.GenLegalMoveList(  moves, check, mate, stalemate );
     for (int i = 0; i < moves.size(); i++) {
@@ -20,74 +65,57 @@ std::vector<thc::Move> GetLegalMoves( thc::ChessRules &cr )
         } else if (cr.squares[moves[i].dst] != ' ') {
             captures.push_back(moves[i]);
         } else {
-            attacks.push_back(moves[i]);
+            normal.push_back(moves[i]);
         }
     }
     moves.clear();
     moves.insert(moves.end(), checks.begin(), checks.end());
     moves.insert(moves.end(), captures.begin(), captures.end());
-    moves.insert(moves.end(), attacks.begin(), attacks.end());
+    moves.insert(moves.end(), normal.begin(), normal.end());
     return moves;
 }
 
-void DisplayLegalMoves( thc::ChessRules &cr )
-{
-    std::vector<thc::Move> moves = GetLegalMoves(cr);
-    for(auto & move : moves)
-    {
-        std::string mv_txt = move.NaturalOut(&cr);
-        std::cout << mv_txt.c_str() << std::endl;
-    }
-}
-
-int evaluateMaterial(const thc::ChessRules& board) {
-    int score = 0;
-    for (int i = 0; i < 64; i++) { // iterate over all squares on the board
-        auto square = static_cast<thc::Square>(i);
-        char piece = board.squares[square]; // get the piece on the square
-        switch (piece) {
-            case 'P': score += 1; break; // white pawn
-            case 'N': score += 3; break; // white knight
-            case 'B': score += 3; break; // white bishop
-            case 'R': score += 5; break; // white rook
-            case 'Q': score += 9; break; // white queen
-            case 'p': score -= 1; break; // black pawn
-            case 'n': score -= 3; break; // black knight
-            case 'b': score -= 3; break; // black bishop
-            case 'r': score -= 5; break; // black rook
-            case 'q': score -= 9; break; // black queen
-            default: break;
-        }
-    }
-    return score;
-}
-
-int alphaBeta(thc::ChessRules &cr, int depth, int alpha, int beta, bool maximizingPlayer){
+short alphaBeta(thc::ChessRules &cr, char depth, short alpha, short beta, bool maximizingPlayer){
     if (depth == 0){
         return evaluateMaterial(cr);
     }
 
     if (maximizingPlayer) {
-        int maxEval = -1000;
+        short maxEval = -1000;
         for (auto &move : GetLegalMoves(cr)) {
             thc::ChessRules cr_copy = cr;
             cr_copy.PlayMove(move);
-            int eval = alphaBeta(cr_copy, depth - 1, alpha, beta, false);
-            maxEval = std::max(maxEval, eval);
-            alpha = std::max(alpha, eval);
+            long long hash = cr_copy.HashCalculate();
+            short eval = getEvalFromHash(hash, depth - 1);
+
+            if (eval==404){
+                eval = alphaBeta(cr_copy, depth - 1, alpha, beta, false);
+                storeHashEntry(cr_copy, depth - 1, eval);
+            }
+
+            maxEval = std::max<short>(maxEval, eval);
+            alpha = std::max<short>(alpha, eval);
             if (beta <= alpha){
                 break;
             }
         }
         return maxEval;
     } else {
-        int minEval = 1000;
+        short minEval = 1000;
         for (auto &move : GetLegalMoves(cr)) {
             thc::ChessRules cr_copy = cr;
             cr_copy.PlayMove(move);
-            int eval = alphaBeta(cr_copy, depth - 1, alpha, beta, true);
-            minEval = std::min(minEval, eval);
-            beta = std::min(beta, eval);
+            long long hash = cr_copy.HashCalculate();
+
+            short eval = getEvalFromHash(hash, depth - 1);
+
+            if (eval==404){
+                eval = alphaBeta(cr_copy, depth - 1, alpha, beta, true);
+                storeHashEntry(cr_copy, depth - 1, eval);
+            }
+
+            minEval = std::min<short>(minEval, eval);
+            beta = std::min<short>(beta, eval);
             if (beta <= alpha){
                 break;
             }
@@ -96,67 +124,50 @@ int alphaBeta(thc::ChessRules &cr, int depth, int alpha, int beta, bool maximizi
     }
 }
 
-thc::Move findBestMove(thc::ChessRules &cr, int depth, bool isWhite){
-    if (isWhite){
-        int maxEval = -1000;
-        thc::Move bestMove = thc::Move();
-        for (auto &move : GetLegalMoves(cr)) {
-            thc::ChessRules cr_copy = cr;
-            cr_copy.PlayMove(move);
-            int eval = alphaBeta(cr_copy, depth - 1, -1000, 1000, false);
+thc::Move findBestMove(thc::ChessRules &cr, char depth, bool isWhite){
+    thc::Move bestMove = thc::Move();
 
-            if (eval == 1000) {
-                std::string mv_txt = move.NaturalOut(&cr);
-                std::cout << mv_txt.c_str();
-                return move;
-            }
+    short bestValue = isWhite ? -1000 : 1000;
 
-            if (eval > maxEval){
-                maxEval = eval;
-                bestMove = move;
-            }
+    std::cout << "Starting search\n";
+    for (auto &move : GetLegalMoves(cr)) {
+        thc::ChessRules cr_copy = cr;
+        cr_copy.PlayMove(move);
+        long long hash = cr_copy.HashCalculate();
+
+        short eval = getEvalFromHash(hash, depth - 1);
+        if (eval==404){
+            eval = alphaBeta(cr_copy, depth - 1, -1000, 1000, !isWhite);
+            storeHashEntry(cr_copy, depth - 1, eval);
         }
-        std::string mv_txt = bestMove.NaturalOut(&cr);
-        std::cout << mv_txt.c_str();
-        return bestMove;
-    }
-    else {
-        int maxEval = 1000;
-        thc::Move bestMove = thc::Move();
-        for (auto &move : GetLegalMoves(cr)) {
-            thc::ChessRules cr_copy = cr;
-            cr_copy.PlayMove(move);
-            int eval = alphaBeta(cr_copy, depth - 1, -1000, 1000, true);
 
-            if (eval == -1000) {
-                std::string mv_txt = move.NaturalOut(&cr);
-                std::cout << mv_txt.c_str();
-                return move;
-            }
-            if (eval < maxEval){
-                maxEval = eval;
-                bestMove = move;
-            }
+        if((isWhite && eval > bestValue) || (!isWhite && eval < bestValue)){
+            bestValue = eval;
+            bestMove = move;
         }
-        std::string mv_txt = bestMove.NaturalOut(&cr);
-        std::cout << mv_txt.c_str();
-        return bestMove;
+        std::cout << "Move: " << move.NaturalOut(&cr).c_str() << ", eval" << eval << "\n";
     }
+    std::string mv_txt = bestMove.NaturalOut(&cr);
+    std::cout << "Move: " << mv_txt.c_str() << ", Eval" << bestValue << "\n";
+
+    return bestMove;
 }
 
 int main()
 {
     thc::ChessRules cr;
-    cr.Forsyth("r4rk1/1p3p1p/2p1bp2/6q1/pQ6/P4PP1/1P2B2P/K5RR b - - 0 1");
-//    r4rk1/1p3p1p/2p2bp2/6q1/pQ6/P4PP1/1P2B2P/K5RR b - - 0 1
-//    r4rk1/1p3p1p/2p1bp2/6q1/pQ6/P4PP1/1P2B2P/K5RR b - - 0 1
+    cr.Forsyth("r3kb1r/pp3pp1/1np1pn1p/4N2P/2PP1B2/6N1/qP2QPP1/2KRR3 w kq - 0 2");
+    transpositionTable.reserve(amountOfRows);
     DisplayPosition(cr);
-    findBestMove(cr, 6, false);
+    findBestMove(cr, 8, true);
+    return 0;
 }
 
 // TODO:
-// 1. Add transpostion tables with zobrist hashing
+// 1. Add transposition tables with zobrist hashing - working but without the hashing
 // 2. Add iterative deepening
 // 3. Add quiescence search
 // 4. Add opening book
-// 5. Add endgame tablebases
+// 5. Add endgame table bases
+
+#pragma clang diagnostic pop
