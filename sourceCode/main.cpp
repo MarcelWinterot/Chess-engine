@@ -6,7 +6,7 @@
 
 // Chess libraries, and utils
 #include "thc.h"
-#include "endgameTable.h"
+#include "bookMoves.h"
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
@@ -187,12 +187,16 @@ int main()
     std::cout << cr.ToDebugStr() << std::endl;
     return 0;
 }
-
 // TODO:
-// 1. Add transposition tables with zobrist hashing - working
-// 2. Add iterative deepening - working
-// 3. Add quiescence search - will do tomorrow
-// 4. Add opening book - will do tomorrow
-// 5. Add endgame table bases - will do tomorrow
+// 1. Add quiescence search
+// 2. Implement all the function inside findBestMove function
+
+// NEEDS IMPROVEMENT:
+// Iterative deepening, need to add the best found move to the top of move ordering list
+
+// DONE:
+// Transposition table
+// Endgame table base
+// Opening book
 
 #pragma clang diagnostic pop
