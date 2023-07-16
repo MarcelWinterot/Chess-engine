@@ -213,7 +213,7 @@ public:
 
     // Read natural string move eg "Nf3"
     //  return bool okay
-    bool NaturalIn( ChessRules *cr, const char *natural_in );
+    bool NaturalIn(ChessRules *cr, std::basic_string<char> natural_in );
 
     // Read natural string move eg "Nf3"
     //  return bool okay

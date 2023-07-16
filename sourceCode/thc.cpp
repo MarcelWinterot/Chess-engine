@@ -5745,7 +5745,7 @@ void ChessEvaluation::GenLegalMoveListSorted( MOVELIST *list )
  * Read natural string move eg "Nf3"
  *  return bool okay
  ****************************************************************************/
-bool Move::NaturalIn( ChessRules *cr, const char *natural_in )
+bool Move::NaturalIn(ChessRules *cr, basic_string<char> natural_in )
 {
     MOVELIST list;
     int  i, len=0;

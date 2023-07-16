@@ -1,9 +1,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include "thc.h"
 #include <unordered_map>
 #include <chrono>
+
+// Chess libraries, and utils
+#include "thc.h"
+#include "endgameTable.h"
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
@@ -171,11 +174,17 @@ thc::Move findBestMove(thc::ChessRules& cr, char maxDepth, bool isWhite, int max
 
 int main()
 {
+//    thc::ChessRules cr;
+//    cr.Forsyth("8/8/4k3/8/2KQ4/8/8/8 w - - 0 1");
+//    transpositionTable.reserve(amountOfRows);
+//    DisplayPosition(cr);
+//    findBestMove(cr, 40, true, 60);
     thc::ChessRules cr;
-    cr.Forsyth("8/8/4k3/8/2KQ4/8/8/8 w - - 0 1");
-    transpositionTable.reserve(amountOfRows);
-    DisplayPosition(cr);
-    findBestMove(cr, 40, true, 60);
+    cr.Forsyth("8/4k3/8/8/8/8/6q1/3K4 b - - 1 1");
+    thc::Move mv{};
+    mv.NaturalIn(&cr, endgameTable("8/4k3/8/8/8/8/6q1/3K4 b - - 1 1"));
+    cr.PlayMove(mv);
+    std::cout << cr.ToDebugStr() << std::endl;
     return 0;
 }
 

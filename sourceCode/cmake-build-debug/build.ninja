@@ -61,6 +61,12 @@ build CMakeFiles/chess_engine.dir/thc.cpp.obj: CXX_COMPILER__chess_engine_Debug 
   OBJECT_DIR = CMakeFiles\chess_engine.dir
   OBJECT_FILE_DIR = CMakeFiles\chess_engine.dir
 
+build CMakeFiles/chess_engine.dir/endgameTable.cpp.obj: CXX_COMPILER__chess_engine_Debug C$:/Users/Marcel/Documents/GitHub/Chess-engine/sourceCode/endgameTable.cpp || cmake_object_order_depends_target_chess_engine
+  DEP_FILE = CMakeFiles\chess_engine.dir\endgameTable.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu++20
+  OBJECT_DIR = CMakeFiles\chess_engine.dir
+  OBJECT_FILE_DIR = CMakeFiles\chess_engine.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target chess_engine
@@ -69,7 +75,7 @@ build CMakeFiles/chess_engine.dir/thc.cpp.obj: CXX_COMPILER__chess_engine_Debug 
 #############################################
 # Link the executable chess_engine.exe
 
-build chess_engine.exe: CXX_EXECUTABLE_LINKER__chess_engine_Debug CMakeFiles/chess_engine.dir/main.cpp.obj CMakeFiles/chess_engine.dir/thc.cpp.obj
+build chess_engine.exe: CXX_EXECUTABLE_LINKER__chess_engine_Debug CMakeFiles/chess_engine.dir/main.cpp.obj CMakeFiles/chess_engine.dir/thc.cpp.obj CMakeFiles/chess_engine.dir/endgameTable.cpp.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\chess_engine.dir
