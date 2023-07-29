@@ -200,7 +200,7 @@ public:
         return( *((int32_t *)this) == *((int32_t *)(&other)) );
     }
 
-    bool operator !=(const Move &other) const
+    bool operator !=(const char *other) const
     {
         return( *((int32_t *)this) != *((int32_t *)(&other)) );
     }

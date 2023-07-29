@@ -70,7 +70,12 @@ std::string openingBook(std::string &currentGame, std::string &games) {
         std::string  moveToPlay = games.substr(length + location, 2);
 
         if (games[length + location + 2] != ' ') {
-            moveToPlay += games[length + location + 2];
+            if (games[length + location + 3] != ' '){
+                moveToPlay += games.substr(length + location + 2, 2);
+            }
+            else {
+                moveToPlay += games[length + location + 2];
+            }
         }
         currentGame += moveToPlay + " ";
 
