@@ -37,6 +37,27 @@ short getEvalFromHash(long long& hash, int minDepth){
     return 404;
 }
 
+std::vector<thc::Move> GetLegalMoves(thc::ChessRules& cr)
+{
+    std::vector<thc::Move> moves, checks, captures, normal;
+    std::vector<bool> check, mate, stalemate;
+    cr.GenLegalMoveList(moves, check, mate, stalemate);
+    for (int i = 0; i < moves.size(); i++) {
+        if (check[i]) {
+            checks.push_back(moves[i]);
+        } else if (cr.squares[moves[i].dst] != ' ') {
+            captures.push_back(moves[i]);
+        } else {
+            normal.push_back(moves[i]);
+        }
+    }
+    moves.clear();
+    moves.insert(moves.end(), checks.begin(), checks.end());
+    moves.insert(moves.end(), captures.begin(), captures.end());
+    moves.insert(moves.end(), normal.begin(), normal.end());
+    return moves;
+}
+
 std::vector<thc::Move> GetLegalMoves(thc::ChessRules& cr, thc::Move firstMove)
 {
     std::vector<thc::Move> moves, checks, captures, normal;
@@ -60,20 +81,17 @@ std::vector<thc::Move> GetLegalMoves(thc::ChessRules& cr, thc::Move firstMove)
     return moves;
 }
 
-std::vector<thc::Move> GetCapturesOnly(thc::ChessRules& cr)
-{
-    std::vector<thc::Move> moves, sorted;
-    std::vector<bool> check, mate, stalemate;
-    cr.GenLegalMoveList(moves, check, mate, stalemate);
-    for (auto &move : moves){
-        if (cr.squares[move.dst] != ' '){
-            sorted.push_back(move);
+short calculateExtension(thc::ChessRules& cr, thc::Move& move, int depth, int maxDepth){
+    if (cr.squares[move.dst] != ' '){
+        if (depth + 1 > maxDepth){
+            return 0;
         }
+        return 1;
     }
-    return sorted;
+    return 0;
 }
 
-short alphaBeta(thc::ChessRules &cr, int depth, short alpha, short beta, bool maximizingPlayer, thc::Move bestMoveLastIteration){
+short alphaBeta(thc::ChessRules &cr, int depth, short alpha, short beta, bool maximizingPlayer, thc::Move bestMoveLastIteration, int maxDepth){
     if (depth == 0){
         return Evaluation::evaluate(cr);
     }
@@ -85,9 +103,9 @@ short alphaBeta(thc::ChessRules &cr, int depth, short alpha, short beta, bool ma
         cr_copy.PlayMove(move);
 
         long long hash = cr_copy.HashCalculate();
-        short eval = getEvalFromHash(hash, depth - 1);
+        short eval = getEvalFromHash(hash, depth - 2);
         if (eval == 404) {
-            eval = alphaBeta(cr_copy, depth - 1, alpha, beta, !maximizingPlayer, bestMoveLastIteration);
+            eval = alphaBeta(cr_copy, depth - 1, alpha, beta, !maximizingPlayer, bestMoveLastIteration, maxDepth);
             storeHashEntry(cr_copy, depth - 1, eval);
         }
 
@@ -109,31 +127,31 @@ short alphaBeta(thc::ChessRules &cr, int depth, short alpha, short beta, bool ma
 
 thc::Move findBestMove(thc::ChessRules& cr, short maxDepth, bool isWhite) {
     thc::Move bestMove{};
-    short bestValue = isWhite ? -1000 : 1000;
     for (int depth = 1; depth <= maxDepth; depth++) {
         std::cout << "Depth: " << depth << std::endl;
-
+        short bestValue = isWhite ? -1000 : 1000;
         thc::Move bestMoveLastIteration = bestMove;
+        std::vector<thc::Move> moves = depth == 1 ? GetLegalMoves(cr) : GetLegalMoves(cr, bestMoveLastIteration);
 
-        for (auto& move : GetLegalMoves(cr, bestMoveLastIteration)) {
+        for (auto& move : moves) {
             thc::ChessRules cr_copy = cr;
             cr_copy.PlayMove(move);
 
             long long hash = cr_copy.HashCalculate();
             short eval = getEvalFromHash(hash, depth - 1);
             if (eval == 404) {
-                eval = alphaBeta(cr_copy, depth - 1, -1000, 1000, !isWhite, bestMoveLastIteration);
+                eval = alphaBeta(cr_copy, depth - 1, -1000, 1000, !isWhite, bestMoveLastIteration, depth + 3);
                 storeHashEntry(cr_copy, depth - 1, eval);
             }
 
-            std::cout << move.NaturalOut(&cr).c_str() << ": " << eval << std::endl;
+            std::cout << move.NaturalOut(&cr).c_str() << ": " << eval << std::endl; // for debugging purposes
 
             if ((isWhite && eval > bestValue) || (!isWhite && eval < bestValue)) {
                 bestValue = eval;
                 bestMove = move;
             }
         }
-        std::cout << "Best move so far: " << bestMove.NaturalOut(&cr).c_str() << "\n";
+        std::cout << "Best move so far : " << bestMove.NaturalOut(&cr).c_str() << "\n";
     }
 
     std::cout << bestMove.NaturalOut(&cr).c_str() << std::endl;
@@ -176,7 +194,8 @@ int main()
     playGame();
 }
 // TODO:
-// 1. Add search extensions
-// 2. Implement all the function inside findBestMove function
+// 1. Fix the hash table
+// 2. Fix the extensions
+// 3. Add NNUE as the evaluation
 
 #pragma clang diagnostic pop
